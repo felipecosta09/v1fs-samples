@@ -63,9 +63,7 @@ resource "aws_iam_policy" "scanner-policy" {
     {
       "Action": [
         "s3:GetObject",
-        "s3:PutObject",
         "s3:ListBucket",
-        "s3:DeleteObject",
         "s3:ListObjects"
       ],
       "Effect": "Allow",

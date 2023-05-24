@@ -10,3 +10,9 @@ variable "cloudone_region" {
   type        = string
   default     = "us-1"
 }
+
+variable "aws_region" {
+  description = "The region of the AWS account"
+  type        = string
+  default     = "us-east-1"
+}
