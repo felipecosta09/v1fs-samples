@@ -5,7 +5,7 @@ This example shows how to use the [AMaaS Python SDK](https://github.com/trendmic
 ## Requirements
 
 - Have a [Cloud One](https://www.trendmicro.com/cloudone) account. [Sign up for a free trial now](https://cloudone.trendmicro.com/register) if it's not already the case!
-- An [API key](https://cloudone.trendmicro.com/docs/account-and-user-management/c1-api-key/#create-a-new-api-key) with **"Full Access"** permission;
+- An [API key](https://cloudone.trendmicro.com/docs/account-and-user-management/c1-api-key/#create-a-new-api-key) with minimum **"Read Only Access"** permission;
 - Terraform CLI [installed](https://learn.hashicorp.com/tutorials/terraform/install-cli#install-terraform)
 - AWS CLI [installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [configured](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
@@ -95,6 +95,27 @@ The result of the scan will be published to the SNS topic. You can subscribe to 
 ```
 
 You can customize the message that is sent to the SNS topic by changing the lambda function code.
+
+## Performance
+
+Here some performance data based on the tests that I did:
+
+| File | Size | Time |
+|----------|----------|----------|
+| file.docx   | 251Kb   | 0.37s    |
+| file.exe   | 910Kb    | 0.26s    |
+| file.mp3    | 3.8Mb    | 0.22s    |
+| file.mp4    | 59Mb    | 1.06s    |
+| eicar.com    | 68b    | 0.04s    |
+| file.pdf    | 25Mb    | 0.77s    |
+| file.pkg    | 37Mb    | 5.81s    |
+| file.pptx   | 13Mb    | 0.26s    |
+| file.txt    | 3Kb    | 0.20s    |
+| file.zip    | 66Mb    | 9.59s    |
+| file.rpm    | 37Mb    | 0.92s    |
+| file.tar   | 780Kb    | 0.44s    |
+
+The test was executed by deploying the stack an then uploading the file to the S3 bucket. The time is the time that the lambda function took to scan the file.
 
 ## Cleanup
 

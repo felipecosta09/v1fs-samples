@@ -1,10 +1,13 @@
 resource "aws_sqs_queue" "scanner_queue" {
-  name = "scanner_queue-${random_string.random.id}"
+  name = "${var.prefix}-queue-${random_string.random.id}"
   visibility_timeout_seconds = 3000
   message_retention_seconds = 86400
   delay_seconds = 0
   max_message_size = 262144
   receive_wait_time_seconds = 0
+  tags = {
+    Name = "${var.prefix}-queue"
+  }
 }
 
 resource "aws_sqs_queue_policy" "scanner_queue_policy" {

@@ -5,7 +5,7 @@ import os
 import time
 
 # Create the boto3 clients
-s3 = boto3.client('s3')
+s3 = boto3.resource('s3')
 sns = boto3.client('sns')
 secret_manager = boto3.client('secretsmanager')
 sqs = boto3.client('sqs')
@@ -26,7 +26,6 @@ def lambda_handler(event, context):
     bucket = message_body["detail"]["bucket"]["name"]
     key = message_body["detail"]["object"]["key"]
     cloudone_endpoint = f"antimalware.{os.environ['cloudone_region']}.cloudone.trendmicro.com:443"
-    file_path = "/tmp/"+key
     region = event["Records"][0]["awsRegion"]
         
     # Function to delete the sqs message after consumption
@@ -41,10 +40,6 @@ def lambda_handler(event, context):
         secret_manager_response = secret_manager.get_secret_value(SecretId=secret_id)
         apikey_secret = secret_manager_response["SecretString"]
         return apikey_secret
-        
-    # Download the file from S3 to Lambda /tmp
-    def download_file(bucket, key):
-        s3.download_file(bucket, key, f"/tmp/{key}")
 
     # Assign the API key to a variable
     apikey = get_apikey()
@@ -53,22 +48,20 @@ def lambda_handler(event, context):
     delete_message(queue_url, receipt_handle)
 
     # Scan the file using the AMAAS gRPC client   
-    def scan_file(file):
+    def scan_file(key, bucket):
         init = amaas.grpc.init(cloudone_endpoint, apikey, True)
         s = time.perf_counter()
-        result = amaas.grpc.scan_file(file, init)
+        object = s3.Object(bucket, key)
+        buffer = object.get().get('Body').read()
+        result = amaas.grpc.scan_buffer(buffer, key, init)
         elapsed = time.perf_counter() - s
         result_json = json.loads(result)
         result_json['scanDuration'] = f"{elapsed:0.2f}s"
         amaas.grpc.quit(init)
         return json.dumps(result_json)
     
-    # Download the file from S3 to Lambda /tmp
-    download_file(bucket, key)
-    
     # Scan the file ad store the result
-    scan_result = json.loads(scan_file(file_path))
-    
+    scan_result = json.loads(scan_file(key, bucket))
     
     processed_event = str({
     "timestamp": message_body["time"],
@@ -89,6 +82,8 @@ def lambda_handler(event, context):
     "source_ip": message_body["detail"]["source-ip-address"]
     })
     
+    # Print to Lambda Logs
+    print(processed_event)
+    
     # Publish the event to SNS
     sns.publish(TopicArn=topic_arn,Message=processed_event)
-    

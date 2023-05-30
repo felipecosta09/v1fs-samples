@@ -1,3 +1,6 @@
 resource "aws_sns_topic" "sns_topic" {
-  name = "topic-${random_string.random.id}"
+  name = "${var.prefix}-topic-${random_string.random.id}"
+  tags = {
+    Name = "${var.prefix}-topic"
+  }
 }
