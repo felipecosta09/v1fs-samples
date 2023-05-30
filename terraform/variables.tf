@@ -16,3 +16,18 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "prefix" {
+  description = "The prefix for the resources"
+  type        = string
+  default     = "scanner"
+}
+
+variable "vpc" {
+  description = "The VPC for the scanner"
+  type        = object({
+    subnet_ids = list(string)
+    security_group_ids = list(string)
+  })
+  default     = null
+}

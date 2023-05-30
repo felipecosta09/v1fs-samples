@@ -1,6 +1,9 @@
 # Create a secret for the API key
 resource "aws_secretsmanager_secret" "apikey" {
-  name = "apikey-${random_string.random.id}"
+  name = "${var.prefix}-apikey-${random_string.random.id}"
+  tags = {
+    Name = "${var.prefix}-apikey"
+  }
 }
 
 # Store the API key in the secret

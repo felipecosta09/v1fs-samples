@@ -1,1 +1,10 @@
 .DS_Store
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/zip/scanner/lambda.zip
+.gitignore
+terraform/.terraform/providers/registry.terraform.io/hashicorp/random/3.5.1/darwin_arm64/terraform-provider-random_v3.5.1_x5
+terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/4.67.0/darwin_arm64/terraform-provider-aws_v4.67.0_x5
+.gitignore
+terraform/.terraform/providers/registry.terraform.io/hashicorp/archive/2.3.0/darwin_arm64/terraform-provider-archive_v2.3.0_x5

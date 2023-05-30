@@ -2,17 +2,24 @@
 resource "aws_lambda_function" "scanner" {
   depends_on = [ data.archive_file.scanner_lambda_zip, aws_lambda_layer_version.amaas-layer ]
   filename         = "${path.module}/zip/scanner/lambda.zip"
-  function_name    = "scanner-${random_string.random.id}"
-  description      = "Scanner to scan the bucket using the AMaaS"
+  function_name    = "${var.prefix}-${random_string.random.id}"
+  description      = "Function to scan the bucket using the AMaaS"
   role             = "${aws_iam_role.scanner-role.arn}"
   handler          = "scanner_lambda.lambda_handler"
   runtime          = "python3.9"
   timeout          = "300"
   memory_size      = "512"
   architectures    = ["x86_64"]
+  dynamic "vpc_config" {
+    for_each = var.vpc != null ? [1] : []
+    content {
+      subnet_ids         = var.vpc.subnet_ids
+      security_group_ids = var.vpc.security_group_ids
+    }
+  }
   layers = [ aws_lambda_layer_version.amaas-layer.arn ]
   ephemeral_storage {
-    size = 2048 # Min 512 MB and the Max 10240 MB
+    size = 512
   }
   environment {
     variables = {
@@ -23,19 +30,19 @@ resource "aws_lambda_function" "scanner" {
     }
   }
   tags = {
-    Name = "scanner_lambda" 
+    Name = "${var.prefix}-lambda" 
   }
 }
 
 resource "aws_lambda_layer_version" "amaas-layer" {
   filename   = "${path.module}/lambda/scanner/layer/amaas_layer.zip"
-  layer_name = "amaas-layer-${random_string.random.id}"
+  layer_name = "${var.prefix}-layer-${random_string.random.id}"
   compatible_architectures = [ "x86_64" ]
   compatible_runtimes = [ "python3.9" ]
 }
 
 resource "aws_iam_role" "scanner-role" {
-  name = "scanner-role-${random_string.random.id}"
+  name = "${var.prefix}-role-${random_string.random.id}"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -51,11 +58,14 @@ resource "aws_iam_role" "scanner-role" {
   ]
 }
 EOF
+  tags = {
+    Name = "${var.prefix}-role" 
+  }
 }
 
 resource "aws_iam_policy" "scanner-policy" {
-  name        = "scanner-policy-s3-${random_string.random.id}"
-  description = "Policy for scanner to access the bucket"
+  name        = "${var.prefix}-policy-${random_string.random.id}"
+  description = "Policy for scanner to access the resources"
   policy      = <<EOF
 {
   "Version": "2012-10-17",
@@ -117,6 +127,9 @@ resource "aws_iam_policy" "scanner-policy" {
   
 }
 EOF
+  tags = {
+    Name = "${var.prefix}-policy" 
+  }
 }
 
 
@@ -128,6 +141,12 @@ resource "aws_iam_role_policy_attachment" "scanner-policy-exec" {
 resource "aws_iam_role_policy_attachment" "scanner_lambda_policy_attachment" {
   role       = "${aws_iam_role.scanner-role.name}"
   policy_arn = "${aws_iam_policy.scanner-policy.arn}"
+}
+
+resource "aws_iam_role_policy_attachment" "scanner_lambda_vpc_policy_attachment" {
+  count     = var.vpc != null ? 1 : 0
+  role       = "${aws_iam_role.scanner-role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 
