@@ -1,12 +1,26 @@
 resource "aws_sqs_queue" "scanner_queue" {
   name = "${var.prefix}-queue-${random_string.random.id}"
-  visibility_timeout_seconds = 3000
-  message_retention_seconds = 86400
-  delay_seconds = 0
-  max_message_size = 262144
-  receive_wait_time_seconds = 0
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 3600
+  visibility_timeout_seconds = 720
   tags = {
     Name = "${var.prefix}-queue"
+  }
+  redrive_policy            = jsonencode({
+    deadLetterTargetArn    = aws_sqs_queue.scanner_dlq.arn
+    maxReceiveCount        = 3
+  })
+}
+
+resource "aws_sqs_queue" "scanner_dlq" {
+  name                      = "${var.prefix}-dlq-${random_string.random.id}"
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 3600
+  visibility_timeout_seconds = 720
+  tags = {
+    Name = "${var.prefix}-dlq"
   }
 }
 

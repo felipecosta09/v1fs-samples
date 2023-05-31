@@ -91,7 +91,8 @@ resource "aws_iam_policy" "scanner-policy" {
       ],
       "Effect": "Allow",
       "Resource": [
-        "${aws_sqs_queue.scanner_queue.arn}"
+        "${aws_sqs_queue.scanner_queue.arn}",
+        "${aws_sqs_queue.scanner_dlq.arn}"
       ]
     },
     {
@@ -149,7 +150,6 @@ resource "aws_iam_role_policy_attachment" "scanner_lambda_vpc_policy_attachment"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-
 resource "aws_lambda_permission" "sns_publish_permission" {
   statement_id  = "AllowSNSPublish"
   action        = "lambda:InvokeFunction"
@@ -160,6 +160,12 @@ resource "aws_lambda_permission" "sns_publish_permission" {
 
 resource "aws_lambda_event_source_mapping" "connect_sqs" {
   event_source_arn = aws_sqs_queue.scanner_queue.arn
+  function_name    = aws_lambda_function.scanner.arn
+  enabled          = true
+}
+
+resource "aws_lambda_event_source_mapping" "connect_dlq" {
+  event_source_arn = aws_sqs_queue.scanner_dlq.arn
   function_name    = aws_lambda_function.scanner.arn
   enabled          = true
 }

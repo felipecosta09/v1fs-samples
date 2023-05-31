@@ -31,3 +31,9 @@ variable "vpc" {
   })
   default     = null
 }
+
+variable "kms_key_bucket" {
+  description = "The KMS Master key ARN for the scanner to access objects in a bucket using KMS encryption"
+  type        = string
+  default     = null
+}
