@@ -37,3 +37,10 @@ variable "kms_key_bucket" {
   type        = string
   default     = null
 }
+
+# Missing implementation
+variable "enable_tag" {
+  description = "In case you want to tag the objects scanned by the scanner"
+  type        = string
+  default     = "false"
+}
