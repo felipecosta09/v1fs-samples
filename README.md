@@ -39,6 +39,17 @@ The way that the stack was build give you the flexibility to customize the stack
 
 The Stack work on any regions where the resources described above are available.
 
+
+## How the scan works
+
+The AMaaS is a cloud service that is part of the Trend Cloud One platform, allowing you to scan files and determine whether they are malicious or not. The interaction with the AMaaS backend service is facilitated through an SDK that enables you to send files to the backend service. The backend service utilizes the Trend Micro Antimalware engine and the Trend Micro Smart Protection Network (SPN) for file scanning.
+
+The AMaaS SDK Python library is available on [GitHub](https://github.com/trendmicro/cloudone-antimalware-python-sdk).
+
+To perform file scanning using the AMaaS SDK, it is typically required to have the file present in the local file system. During the scan process, the backend will request each block of the file until a verdict is reached. However, in this specific example, the file is stored in an S3 bucket. Instead of downloading the entire file, the lambda function will stream it from the S3 bucket using the [S3.Object.get()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/object/get.html) method to the Lambda. Subsequently, the AMaaS backend will request each stream from the AMaaS SDK client for scanning. The backend service will evaluate each stream until a verdict is obtained, and finally, the scan result will be returned to the lambda function.
+
+![scan](amaas-s3.png)
+
 ## Usage
 
 To build and deploy the stack, follow the steps below:
@@ -121,6 +132,19 @@ Here some performance data based on the tests that I did:
 | file.tar   | 780Kb    | 0.44s    |
 
 The test was executed by deploying the stack an then uploading the file to the S3 bucket. The time is the time that the lambda function took to scan the file.
+
+## Additionals
+
+### Tagging
+The stack has support to tag the objects when the scan is completed. To enable the tagging, you need to set the variable `enable_tag` to `true`, the object will be tagged with the following tags:
+
+- `scanResult` - The result of the scan, the possible values are `clean` or `malicious`.
+
+### VPC
+The stack also supports a additional configuration for the lambda function to be deployed with a VPC. To enable the VPC configuration, you need to provide the subnet and security group to the variable `vpc`, based on the subnet and security group that you provide, the lambda function will be deployed with a VPC.
+
+### KMS
+The stack also supports a additional configuration for the lambda function to scan files encrypted on a bucket using KMS. To enable the KMS configuration, you need to provide the KMS key to the variable `kms_key_bucket`, based on the KMS key that you provide, the lambda function will have access to the KMS key and using the key to decrypt the file for the scan.
 
 ## Cleanup
 

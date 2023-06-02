@@ -4,7 +4,7 @@ resource "aws_lambda_function" "scanner" {
   filename         = "${path.module}/zip/scanner/lambda.zip"
   function_name    = "${var.prefix}-${random_string.random.id}"
   description      = "Function to scan the bucket using the AMaaS"
-  role             = "${aws_iam_role.scanner-role.arn}"
+  role             = aws_iam_role.scanner-role.arn
   handler          = "scanner_lambda.lambda_handler"
   runtime          = "python3.9"
   timeout          = "300"
@@ -135,18 +135,18 @@ EOF
 
 
 resource "aws_iam_role_policy_attachment" "scanner-policy-exec" {
-  role       = "${aws_iam_role.scanner-role.name}"
+  role       = aws_iam_role.scanner-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "scanner_lambda_policy_attachment" {
-  role       = "${aws_iam_role.scanner-role.name}"
-  policy_arn = "${aws_iam_policy.scanner-policy.arn}"
+  role       = aws_iam_role.scanner-role.name
+  policy_arn = aws_iam_policy.scanner-policy.arn
 }
 
 resource "aws_iam_role_policy_attachment" "scanner_lambda_vpc_policy_attachment" {
   count     = var.vpc != null ? 1 : 0
-  role       = "${aws_iam_role.scanner-role.name}"
+  role       = aws_iam_role.scanner-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 

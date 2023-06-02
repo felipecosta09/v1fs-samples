@@ -33,6 +33,6 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "scanner_lambda_kmspolicy_attachment" {
   count      = length(aws_iam_policy.scanner-kms-policy) > 0 ? 1 : 0
-  role       = "${aws_iam_role.scanner-role.name}"
-  policy_arn = "${aws_iam_policy.scanner-kms-policy[count.index].arn}"
+  role       = aws_iam_role.scanner-role.name
+  policy_arn = aws_iam_policy.scanner-kms-policy[count.index].arn
 }
