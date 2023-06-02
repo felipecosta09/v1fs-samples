@@ -14,13 +14,18 @@ This example shows how to use the [AMaaS Python SDK](https://github.com/trendmic
 ****IMPORTANT****
 This is an example of how to use the AMaaS Python SDK to scan files uploaded to an S3 bucket. The example is not intended to be used in production, it is just a way to show how to use the SDK.
 
-This Stack creates the following resources:
+This Stack creates the following **mandatory** resources:
 - 1x EventBridge rule
 - 1x Lambda function + 1x Lambda layer
 - 1x IAM role and policies
 - 1x SQS queue
 - 1x SNS topic
 - 1x Secrets Manager secret (To store the Cloud One API key)
+
+The stack also creates the following **optional** resources:
+- KMS policies to support scanning encrypted files
+- VPC policies/configurations to support scanning lambda behind a VPC
+
 
 ![architecture](amaas.png)
 
