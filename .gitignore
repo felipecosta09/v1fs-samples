@@ -9,3 +9,4 @@ terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/4.67.0/darwin
 .gitignore
 terraform/.terraform/providers/registry.terraform.io/hashicorp/archive/2.3.0/darwin_arm64/terraform-provider-archive_v2.3.0_x5
 terraform.tfstate
+terraform/zip/tag/tag_lambda.zip
