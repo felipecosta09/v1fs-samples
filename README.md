@@ -12,4 +12,4 @@ This example shows how to use the [AMaaS Python SDK](https://github.com/trendmic
 
 ## Usage
 
-There are different types of scan for different storage types such as S3 and EFS. These examples shows how to create a stack that automatically scan files in these storages. Go to the storage folder to see the examples.
+There are different types of scan for different storage types such as S3 and EFS. These examples shows how to create a stack that automatically scan files in these storages. Go to the storage folder to see the examples and choose the desire IaC framework that you like to use.
