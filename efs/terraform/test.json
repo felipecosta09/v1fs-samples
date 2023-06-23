@@ -1,0 +1,17 @@
+{
+  "scan_type": "manual",
+  "files": [
+    "/mnt/efs/thcrwujv.png",
+    "/mnt/efs/test/test2/eicar.com"
+  ],
+  "directories": [
+    "/mnt/efs/test",
+    "/mnt/efs/test/test2/"
+  ],
+  "file_exclusions": [
+    "/mnt/efs/thcrwujv.png"
+  ],
+  "directories_exclusions": [
+    "/mnt/efs/test"
+  ]
+}

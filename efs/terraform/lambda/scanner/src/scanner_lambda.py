@@ -12,6 +12,9 @@ sns = boto3.client('sns')
 topic_arn = os.environ['topic_arn']
 
 def lambda_handler(event, context):
+    # Manual scan status
+    scan_type = event.get('scan_type')
+    
     # Get the API key from AWS Secrets Manager
     def get_apikey():
         secret_manager_response = secret_manager.get_secret_value(SecretId=secret_id)
@@ -54,19 +57,37 @@ def lambda_handler(event, context):
     # dictionary to store all scan results
     all_scan_results = {}
 
-    # for each file in the mount directory, if is a file, scan it
-    for root, dirs, files in os.walk(mount_dir):
-        for file in files:
-            file = f"{root}/"+file
-            scan = json.loads(scan_file(file, init))
-            all_scan_results[file] = scan
-    print(all_scan_results)
-
+    # If manual scan is set to true, scan the files
+    if scan_type == "manual":
+        print("Manual scan is set to true, scanning selected files...")
+        files = event.get('files')
+        if files:
+            for file in files:
+                print("Processing target: ", file)
+                scan = json.loads(scan_file(file, init))
+                print("Scan Result: ", scan)
+                print("Sending result to SNS...")
+                processed_event = str(scan)
+                sns.publish(TopicArn=topic_arn,Message=processed_event)
+                print(f"Results of the file {file} published on SNS")
+                all_scan_results[file] = scan
+        else:
+            print("Manual scan is enabled, but no targets were provided")
+            
+    else:
+        # Full scan operation
+        # for each file in the mount directory, if is a file, scan it
+        print("Full scan mode: scanning all files...")
+        for root, dirs, files in os.walk(mount_dir):
+            for file in files:
+                file = f"{root}/"+file
+                print("Processing Target: ", file)
+                scan = json.loads(scan_file(file, init))
+                print("Scan Result: ", scan)
+                processed_event = str(scan)
+                sns.publish(TopicArn=topic_arn,Message=processed_event)
+                print(f"Results of the file {file} published on SNS")
+                all_scan_results[file] = scan
+    
     # quit the gRPC client
     quit = quit(init)
-
-    # Prepare scan results to SNS
-    processed_event = str(all_scan_results)
-
-    # Publish the scan results to SNS
-    sns.publish(TopicArn=topic_arn,Message=processed_event)
