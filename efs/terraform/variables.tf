@@ -46,3 +46,16 @@ variable "security_group" {
   type        = string
   default     = ""
 }
+
+variable "schadule_scan" {
+  description = "The schedule for the scan"
+  type        = bool
+  default     = "false"
+}
+
+variable "scan_frequency" {
+  description = "The frequency of the scan -> https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html"
+  type        = string
+  # default     = "cron(0/5 * ? * FRI *)" # Every 5 minutes on Friday
+  default     = "rate(1 hour)" # Every hour
+}
