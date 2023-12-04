@@ -1,18 +1,18 @@
-# AMaaS Stack example
+# V1FS S3 Stack example
 
-This example shows how to use the [AMaaS Python SDK](https://github.com/trendmicro/cloudone-antimalware-python-sdk/) to create a new stack that automatically scan files uploaded to an S3 bucket.
+This example shows how to use the [V1FS Python SDK](https://github.com/trendmicro/tm-v1-fs-python-sdk) to create a new stack that automatically scan files uploaded to an S3 bucket.
 
 ## Requirements
 
-- Have a [Cloud One](https://www.trendmicro.com/cloudone) account. [Sign up for a free trial now](https://cloudone.trendmicro.com/register) if it's not already the case!
-- An [API key](https://cloudone.trendmicro.com/docs/account-and-user-management/c1-api-key/#create-a-new-api-key) with minimum **"Read Only Access"** permission;
+- Have a [Vision One](https://www.trendmicro.com/visionone) account. [Sign up for a free trial now](https://resources.trendmicro.com/vision-one-trial.html) if it's not already the case!
+- An [API key](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-__api-keys-2) with V1FS **Run file scan via SDK** permissions;
 - Terraform CLI [installed](https://learn.hashicorp.com/tutorials/terraform/install-cli#install-terraform)
 - AWS CLI [installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [configured](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
 ## Before you start
 
 ****IMPORTANT****
-This is an example of how to use the AMaaS Python SDK to scan files uploaded to an S3 bucket. The example is not intended to be used in production, it is just a way to show how to use the SDK.
+This is an example of how to use the V1FS Python SDK to scan files uploaded to an S3 bucket.
 
 This Stack creates the following **mandatory** resources:
 - 1x EventBridge rule
@@ -20,18 +20,18 @@ This Stack creates the following **mandatory** resources:
 - 1x IAM role and policies
 - 1x SQS queue
 - 1x SNS topic
-- 1x Secrets Manager secret (To store the Cloud One API key)
+- 1x Secrets Manager secret (To store the Vision One API key)
 
 The stack also creates the following **optional** resources:
 - KMS policies to support scanning encrypted files
 - VPC policies/configurations to support scanning lambda behind a VPC
 
 
-![architecture](amaas.png)
+![architecture](images/v1fs-s3.png)
 
 The architecture is triggered every time that a file is uploaded to a S3 bucket, that happen only in the aws region where the bucket is located and for the eventbridge is trigger the s3 bucket must have the event notification for eventbridge enabled.
 
-The notification then is sent to a SQS queue and a lambda function is trigger to process the message. The lambda function will download the file from the S3 bucket and use the AMaaS Python SDK to scan the file. The result of the scan is publish to a SNS topic.
+The notification then is sent to a SQS queue and a lambda function is trigger to process the message. The lambda function will download the file from the S3 bucket and use the V1FS Python SDK to scan the file. The result of the scan is publish to a SNS topic.
 
 The SNS topic can be used to send the notification to a email, slack, etc.
 
@@ -42,13 +42,13 @@ The Stack work on any regions where the resources described above are available.
 
 ## How the scan works
 
-The AMaaS is a cloud service that is part of the Trend Cloud One platform, allowing you to scan files and determine whether they are malicious or not. The interaction with the AMaaS backend service is facilitated through an SDK that enables you to send files to the backend service. The backend service utilizes the Trend Micro Antimalware engine and the Trend Micro Smart Protection Network (SPN) for file scanning.
+The V1FS is a cloud service that is part of the Trend Vision One platform, allowing you to scan files and determine whether they are malicious or not. The interaction with the V1FS backend service is facilitated through an SDK that enables you to send files to the backend service. The backend service utilizes the Trend Micro Antimalware engine and the Trend Micro Smart Protection Network (SPN) for file scanning.
 
-The AMaaS SDK Python library is available on [GitHub](https://github.com/trendmicro/cloudone-antimalware-python-sdk).
+The V1FS SDK Python library is available on [GitHub](https://github.com/trendmicro/tm-v1-fs-python-sdk). Additional language support is also available.
 
-To perform file scanning using the AMaaS SDK, it is typically required to have the file present in the local file system. During the scan process, the backend will request each block of the file until a verdict is reached. However, in this specific example, the file is stored in an S3 bucket. Instead of downloading the entire file, the lambda function will stream it from the S3 bucket using the [S3.Object.get()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/object/get.html) method to the Lambda. Subsequently, the AMaaS backend will request each stream from the AMaaS SDK client for scanning. The backend service will evaluate each stream until a verdict is obtained, and finally, the scan result will be returned to the lambda function.
+To perform file scanning using the V1FS SDK, it is typically required to have the file present in the local file system. During the scan process, the backend will request each block of the file until a verdict is reached. However, in this specific example, the file is stored in an S3 bucket. Instead of downloading the entire file, the lambda function will stream it from the S3 bucket using the [S3.Object.get()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/object/get.html) method to the Lambda. Subsequently, the V1FS backend will request each stream from the V1FS SDK client for scanning. The backend service will evaluate each stream until a verdict is obtained, and finally, the scan result will be returned to the lambda function.
 
-![scan](amaas-s3.png)
+![scan](images/v1fs-internal.png)
 
 ## Usage
 

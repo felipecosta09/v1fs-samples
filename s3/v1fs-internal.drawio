@@ -1,6 +1,6 @@
-<mxfile modified="2023-06-02T21:51:31.923Z" host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="YoR9Fi9j2e2zVuMyvdy2" version="21.1.2" type="device">
+<mxfile modified="2023-12-04T19:51:22.741Z" host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="zARJPQ2JmKbYCDTnwVr1" version="21.1.2" type="device">
   <diagram id="Ht1M8jgEwFfnCIfOTk4-" name="Page-1">
-    <mxGraphModel dx="1674" dy="854" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1440" dy="854" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -41,7 +41,7 @@
         <mxCell id="UEzPUAAOIrF-is8g5C7q-77" value="" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#277116;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.bucket_with_objects;labelBackgroundColor=#ffffff;" parent="qXlvel-bi4WhbtgMyOii-1" vertex="1">
           <mxGeometry x="28" y="50" width="75" height="78" as="geometry" />
         </mxCell>
-        <mxCell id="qXlvel-bi4WhbtgMyOii-6" value="AMaaS" style="outlineConnect=0;fontColor=#232F3E;gradientColor=#F78E04;gradientDirection=north;fillColor=#D05C17;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;spacingTop=6;" parent="qXlvel-bi4WhbtgMyOii-1" vertex="1">
+        <mxCell id="qXlvel-bi4WhbtgMyOii-6" value="V1FS" style="outlineConnect=0;fontColor=#232F3E;gradientColor=#F78E04;gradientDirection=north;fillColor=#D05C17;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;spacingTop=6;" parent="qXlvel-bi4WhbtgMyOii-1" vertex="1">
           <mxGeometry x="223" y="50" width="77" height="77" as="geometry" />
         </mxCell>
         <mxCell id="gMphVWZr9Liw3VwEEL_Q-4" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;" parent="qXlvel-bi4WhbtgMyOii-1" source="UEzPUAAOIrF-is8g5C7q-77" target="qXlvel-bi4WhbtgMyOii-6" edge="1">
