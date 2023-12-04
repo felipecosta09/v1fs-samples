@@ -2,14 +2,14 @@
 resource "aws_lambda_function" "scanner" {
   depends_on = [ data.archive_file.scanner_lambda_zip, aws_lambda_layer_version.amaas-layer ]
   filename         = "${path.module}/zip/scanner/lambda.zip"
-  function_name    = "${var.prefix}-${random_string.random.id}"
-  description      = "Function to scan the bucket using the AMaaS"
+  function_name    = "${var.prefix}-scannerlambda-${random_string.random.id}"
+  description      = "Function to scan the bucket using the V1FS"
   role             = aws_iam_role.scanner-role.arn
   handler          = "scanner_lambda.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.11"
   timeout          = "300"
   memory_size      = "512"
-  architectures    = ["x86_64"]
+  architectures    = ["arm64"]
   dynamic "vpc_config" {
     for_each = var.vpc != null ? [1] : []
     content {
@@ -23,22 +23,23 @@ resource "aws_lambda_function" "scanner" {
   }
   environment {
     variables = {
-      cloudone_region = var.cloudone_region
+      v1fs_region = var.v1fs_region
       topic_arn = aws_sns_topic.sns_topic.arn
       secret_name = aws_secretsmanager_secret.apikey.name
       queue_url = aws_sqs_queue.scanner_queue.url
+      sdk_tags = join("~", var.sdk_tags)
     }
   }
   tags = {
-    Name = "${var.prefix}-lambda" 
+    Name = "${var.prefix}-scannerlambda-${random_string.random.id}"
   }
 }
 
 resource "aws_lambda_layer_version" "amaas-layer" {
-  filename   = "${path.module}/lambda/scanner/layer/amaas_layer.zip"
+  filename   = "${path.module}/lambda/scanner/layer/v1fs-python311-arm64.zip"
   layer_name = "${var.prefix}-layer-${random_string.random.id}"
-  compatible_architectures = [ "x86_64" ]
-  compatible_runtimes = [ "python3.9" ]
+  compatible_architectures = [ "arm64" ]
+  compatible_runtimes = [ "python3.11" ]
 }
 
 resource "aws_iam_role" "scanner-role" {
@@ -59,7 +60,7 @@ resource "aws_iam_role" "scanner-role" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}-role" 
+    Name = "${var.prefix}-scanner-role-${random_string.random.id}" 
   }
 }
 
@@ -129,7 +130,7 @@ resource "aws_iam_policy" "scanner-policy" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}-policy" 
+    Name = "${var.prefix}-scanner-policy-${random_string.random.id}"
   }
 }
 
@@ -148,14 +149,6 @@ resource "aws_iam_role_policy_attachment" "scanner_lambda_vpc_policy_attachment"
   count     = var.vpc != null ? 1 : 0
   role       = aws_iam_role.scanner-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
-
-resource "aws_lambda_permission" "sns_publish_permission" {
-  statement_id  = "AllowSNSPublish"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.scanner.arn
-  principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.sns_topic.arn
 }
 
 resource "aws_lambda_event_source_mapping" "connect_sqs" {

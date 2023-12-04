@@ -2,7 +2,7 @@
 resource "aws_secretsmanager_secret" "apikey" {
   name = "${var.prefix}-apikey-${random_string.random.id}"
   tags = {
-    Name = "${var.prefix}-apikey"
+    Name = "${var.prefix}-apikey-${random_string.random.id}"
   }
 }
 
@@ -10,7 +10,7 @@ resource "aws_secretsmanager_secret" "apikey" {
 resource "aws_secretsmanager_secret_version" "apikey" {
   depends_on = [ aws_secretsmanager_secret.apikey ]
   secret_id     = aws_secretsmanager_secret.apikey.id
-  secret_string = var.apikey
+  secret_string = var.v1fs_apikey
 }
 
 data "aws_secretsmanager_secret_version" "retrive_secret" {

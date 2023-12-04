@@ -8,7 +8,7 @@ resource "aws_cloudwatch_event_rule" "event_bridge_rule" {
 }
 PATTERN
   tags = {
-    Name = "${var.prefix}-eventbridgerule"
+    Name = "${var.prefix}-eventbridge-rule-${random_string.random.id}"
   }
 }
 

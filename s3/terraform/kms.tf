@@ -27,7 +27,7 @@ resource "aws_iam_policy" "scanner-kms-policy" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}-kms-policy" 
+    Name = "${var.prefix}-kms-policy-${random_string.random.id}" 
   }
 }
 

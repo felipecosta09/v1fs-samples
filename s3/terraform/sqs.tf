@@ -5,7 +5,7 @@ resource "aws_sqs_queue" "scanner_queue" {
   message_retention_seconds = 3600
   visibility_timeout_seconds = 720
   tags = {
-    Name = "${var.prefix}-queue"
+    Name = "${var.prefix}-queue-${random_string.random.id}"
   }
   redrive_policy            = jsonencode({
     deadLetterTargetArn    = aws_sqs_queue.scanner_dlq.arn
@@ -20,7 +20,7 @@ resource "aws_sqs_queue" "scanner_dlq" {
   message_retention_seconds = 3600
   visibility_timeout_seconds = 720
   tags = {
-    Name = "${var.prefix}-dlq"
+    Name = "${var.prefix}-dlq-${random_string.random.id}"
   }
 }
 

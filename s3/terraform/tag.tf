@@ -1,20 +1,20 @@
 resource "aws_lambda_function" "scanner_tag" {
   filename         = "${path.module}/zip/tag/tag_lambda.zip"
-  function_name    = "${var.prefix}tag-${random_string.random.id}"
+  function_name    = "${var.prefix}-tag-lambda-${random_string.random.id}"
   description      = "Function to tag objects scanned by the scanner lambda"
   role             = aws_iam_role.tag-role.arn
   handler          = "tag_lambda.lambda_handler"
-  runtime          = "python3.10"
+  runtime          = "python3.11"
   timeout          = "120"
   memory_size      = "128"
   architectures    = ["arm64"]
   tags = {
-    Name = "${var.prefix}tag-${random_string.random.id}" 
+    Name = "${var.prefix}-tag-lambda-${random_string.random.id}" 
   }
 }
 
 resource "aws_iam_role" "tag-role" {
-  name = "${var.prefix}tag-role-${random_string.random.id}"
+  name = "${var.prefix}-tag-role-${random_string.random.id}"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -31,12 +31,12 @@ resource "aws_iam_role" "tag-role" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}tag-role-${random_string.random.id}" 
+    Name = "${var.prefix}-tag-role-${random_string.random.id}" 
   }
 }
 
 resource "aws_iam_policy" "tag-policy" {
-  name        = "${var.prefix}-tagpolicy-${random_string.random.id}"
+  name        = "${var.prefix}-tag-policy-${random_string.random.id}"
   description = "Policy for the tag lambda"
   policy      = <<EOF
 {
@@ -78,7 +78,7 @@ resource "aws_iam_policy" "tag-policy" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}-tagpolicy-${random_string.random.id}" 
+    Name = "${var.prefix}-tag-policy-${random_string.random.id}" 
   }
 }
 

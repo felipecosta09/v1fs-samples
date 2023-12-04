@@ -1,14 +1,14 @@
 
-variable "apikey" {
-  description = "The Cloud One API key for the scanner"
+variable "v1fs_apikey" {
+  description = "The Vision One API key for the scanner"
   type        = string
   default     = ""
 }
 
-variable "cloudone_region" {
-  description = "The region of the Cloud One console"
+variable "v1fs_region" {
+  description = "The region of the Vision One console"
   type        = string
-  default     = "us-1"
+  default     = "us-east-1"
 }
 
 variable "aws_region" {
@@ -20,7 +20,7 @@ variable "aws_region" {
 variable "prefix" {
   description = "The prefix for the resources"
   type        = string
-  default     = "scanner"
+  default     = "v1fs"
 }
 
 variable "vpc" {
@@ -36,6 +36,12 @@ variable "kms_key_bucket" {
   description = "The KMS Master key ARN for the scanner to access objects in a bucket using KMS encryption"
   type        = string
   default     = null
+}
+
+variable "sdk_tags" {
+  description = "The tags for the resources"
+  type        = list(string)
+  default     = ["env:prod","project:new_app","cost-center:dev"]
 }
 
 # Missing implementation
