@@ -4,8 +4,7 @@ import os
 import boto3
 import time
 
-cloudone_region = os.environ.get('cloudone_region')
-cloudone_endpoint = f"antimalware.{cloudone_region}.cloudone.trendmicro.com:443"
+v1_region = os.environ.get('v1_region')
 mount_dir = "/mnt/efs"
 secret_manager = boto3.client('secretsmanager')
 sns = boto3.client('sns')
@@ -22,8 +21,8 @@ def lambda_handler(event, context):
         return apikey_secret
     
     # init the gRPC client
-    def init(cloudone_endpoint, apikey):
-        return amaas.grpc.init(cloudone_endpoint, apikey, True)
+    def init(v1_region, apikey):
+        return amaas.grpc.init_by_region(region=v1_region, api_key=apikey)
 
     # quit the gRPC client
     def quit(init):
@@ -52,7 +51,7 @@ def lambda_handler(event, context):
     apikey = get_apikey()
     
     # Init the Scan
-    init = init(cloudone_endpoint, apikey)
+    init = init(v1_region, apikey)
     
     # dictionary to store all scan results
     all_scan_results = {}

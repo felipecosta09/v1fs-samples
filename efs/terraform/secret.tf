@@ -2,7 +2,7 @@
 resource "aws_secretsmanager_secret" "apikey" {
   name = "${var.prefix}-apikey-${random_string.random.id}"
   tags = {
-    Name = "${var.prefix}-apikey"
+    Name = "${var.prefix}-apikey-${random_string.random.id}"
   }
 }
 

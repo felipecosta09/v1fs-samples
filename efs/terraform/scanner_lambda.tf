@@ -5,10 +5,10 @@ resource "aws_lambda_function" "scanner" {
   description      = "Function to scan the EFS files using the AMaaS"
   role             = aws_iam_role.scanner-role.arn
   handler          = "scanner_lambda.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.11"
   timeout          = "40"
   memory_size      = "512"
-  architectures    = ["x86_64"]
+  architectures    = ["arm64"]
   layers = [ aws_lambda_layer_version.amaas-layer.arn ]
   file_system_config {
     local_mount_path = "/mnt/efs"
@@ -21,20 +21,20 @@ resource "aws_lambda_function" "scanner" {
   environment {
     variables = {
       topic_arn = aws_sns_topic.sns_topic.arn
-      cloudone_region = var.cloudone_region
+      v1_region = var.v1_region
       secret_name = aws_secretsmanager_secret.apikey.name
     }
   }
   tags = {
-    Name = "${var.prefix}-lambda" 
+    Name = "${var.prefix}-lambda-${random_string.random.id}" 
   }
 }
 
 resource "aws_lambda_layer_version" "amaas-layer" {
-  filename   = "${path.module}/lambda/scanner/layer/amaas_layer.zip"
+  filename   = "${path.module}/lambda/scanner/layer/v1fs-python311-arm64.zip"
   layer_name = "${var.prefix}-layer-${random_string.random.id}"
-  compatible_architectures = [ "x86_64" ]
-  compatible_runtimes = [ "python3.9" ]
+  compatible_architectures = [ "arm64" ]
+  compatible_runtimes = [ "python3.11" ]
 }
 
 resource "aws_iam_role" "scanner-role" {
@@ -55,7 +55,7 @@ resource "aws_iam_role" "scanner-role" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}-role" 
+    Name = "${var.prefix}-role-${random_string.random.id}" 
   }
 }
 
@@ -110,7 +110,7 @@ resource "aws_iam_policy" "scanner-policy" {
 }
 EOF
   tags = {
-    Name = "${var.prefix}-policy" 
+    Name = "${var.prefix}-policy-${random_string.random.id}" 
   }
 }
 

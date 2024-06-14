@@ -1,6 +1,6 @@
 resource "aws_cloudwatch_event_rule" "schedule" {
   count               = var.schadule_scan ? 1 : 0
-  name                = "${var.prefix}-schedule"
+  name                = "${var.prefix}-schedule-${random_string.random.id}"
   description         = "Schedule for the scan"
   schedule_expression = var.scan_frequency
 }

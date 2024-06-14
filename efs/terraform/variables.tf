@@ -5,10 +5,10 @@ variable "apikey" {
   default     = ""
 }
 
-variable "cloudone_region" {
+variable "v1_region" {
   description = "The region of the Cloud One console"
   type        = string
-  default     = "us-1"
+  default     = "ap-southeast-1"
 }
 
 variable "aws_region" {
