@@ -64,7 +64,7 @@ def lambda_handler(event, context):
         s = time.perf_counter()
         object = s3.Object(bucket, key)
         buffer = create_buffer(key, bucket)
-        result = amaas.grpc.scan_buffer(init,buffer,key,tags)
+        result = amaas.grpc.scan_buffer(init,buffer,key,tags, pml=True, feedback=True)
         elapsed = time.perf_counter() - s
         result_json = json.loads(result)
         result_json['scanDuration'] = f"{elapsed:0.2f}s"

@@ -1,12 +1,13 @@
 
 resource "aws_lambda_function" "scanner" {
   depends_on = [ data.archive_file.scanner_lambda_zip, aws_lambda_layer_version.amaas-layer ]
-  filename         = "${path.module}/zip/scanner/lambda.zip"
+  filename         = data.archive_file.scanner_lambda_zip.output_path
   function_name    = "${var.prefix}-scannerlambda-${random_string.random.id}"
   description      = "Function to scan the bucket using the V1FS"
   role             = aws_iam_role.scanner-role.arn
   handler          = "scanner_lambda.lambda_handler"
-  runtime          = "python3.11"
+  source_code_hash = data.archive_file.scanner_lambda_zip.output_base64sha256
+  runtime          = "python3.12"
   timeout          = "300"
   memory_size      = "512"
   architectures    = ["arm64"]
@@ -36,10 +37,10 @@ resource "aws_lambda_function" "scanner" {
 }
 
 resource "aws_lambda_layer_version" "amaas-layer" {
-  filename   = "${path.module}/lambda/scanner/layer/v1fs-python311-arm64.zip"
+  filename   = "${path.module}/lambda/scanner/layer/v1fs-python312-arm64.zip"
   layer_name = "${var.prefix}-layer-${random_string.random.id}"
   compatible_architectures = [ "arm64" ]
-  compatible_runtimes = [ "python3.11" ]
+  compatible_runtimes = [ "python3.12" ]
 }
 
 resource "aws_iam_role" "scanner-role" {

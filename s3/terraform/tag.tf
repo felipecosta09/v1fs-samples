@@ -1,10 +1,11 @@
 resource "aws_lambda_function" "scanner_tag" {
-  filename         = "${path.module}/zip/tag/tag_lambda.zip"
+  filename         = data.archive_file.tag_lambda_zip.output_path
   function_name    = "${var.prefix}-tag-lambda-${random_string.random.id}"
   description      = "Function to tag objects scanned by the scanner lambda"
   role             = aws_iam_role.tag-role.arn
+  source_code_hash = data.archive_file.tag_lambda_zip.output_base64sha256
   handler          = "tag_lambda.lambda_handler"
-  runtime          = "python3.11"
+  runtime          = "python3.12"
   timeout          = "120"
   memory_size      = "128"
   architectures    = ["arm64"]

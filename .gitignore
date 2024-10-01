@@ -10,3 +10,10 @@ terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/4.67.0/darwin
 terraform/.terraform/providers/registry.terraform.io/hashicorp/archive/2.3.0/darwin_arm64/terraform-provider-archive_v2.3.0_x5
 terraform.tfstate
 terraform/zip/tag/tag_lambda.zip
+s3/terraform/.terraform.lock.hcl
+s3/terraform/terraform.tfstate.backup
+s3/terraform/.terraform/providers/registry.terraform.io/hashicorp/archive/2.4.0/darwin_arm64/terraform-provider-archive_v2.4.0_x5
+s3/terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.29.0/darwin_arm64/terraform-provider-aws_v5.29.0_x5
+s3/terraform/.terraform/providers/registry.terraform.io/hashicorp/random/3.6.0/darwin_arm64/terraform-provider-random_v3.6.0_x5
+s3/terraform/zip/tag/tag_lambda.zip
+s3/terraform/zip/scanner/lambda.zip
