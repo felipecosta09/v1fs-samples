@@ -1,0 +1,476 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'V1FS S3 Stack - Automatically scan files uploaded to S3 bucket using Trend Micro Vision One File Security'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Vision One Parameters
+        Parameters:
+          - V1FSApiKey
+          - V1FSRegion
+          - EnableTag
+          - SDKTags
+          - Prefix
+      - Label:
+          default: KMS Encryption (Optional)
+        Parameters:
+          - KMSKeyBucket
+      - Label:
+          default: Lambda Zip Package Location
+        Parameters:
+          - LambdaCodeBucket
+          - ScannerLambdaKey
+          - TagLambdaKey
+          - ScannerLayerKey
+      - Label:
+          default: VPC Deployment (Optional)
+        Parameters:
+          - VPCCidr
+          - SubnetIds
+          - SecurityGroupIds
+    ParameterLabels:
+      V1FSApiKey:
+        default: Vision One API Key
+      LambdaCodeBucket:
+        default: S3 Bucket Name containing the Lambda Zip Packages
+      V1FSRegion:
+        default: Vision One File Security Region
+      Prefix:
+        default: Resource Prefix
+      EnableTag:
+        default: Enable S3 Object Tagging
+      SDKTags:
+        default: SDK Tags applied to Vision One UI View
+      ScannerLambdaKey:
+        default: Scanner Lambda S3 Key
+      TagLambdaKey:
+        default: Tag Lambda S3 Key
+      ScannerLayerKey:
+        default: Lambda Layer S3 Key
+      VPCCidr:
+        default: VPC CIDR Block
+      SubnetIds:
+        default: Subnet IDs
+      SecurityGroupIds:
+        default: Security Group IDs
+      KMSKeyBucket:
+        default: KMS Key ARN
+
+Parameters:
+  V1FSApiKey:
+    Type: String
+    Description: The Vision One API key for the scanner
+    NoEcho: true
+    MinLength: 1
+  
+  LambdaCodeBucket:
+    Type: String
+    Description: S3 bucket name containing the Lambda function code
+    MinLength: 1
+
+  V1FSRegion:
+    Type: String
+    Description: The region of the Vision One console
+    Default: us-east-1
+    AllowedValues:
+      - us-east-1
+      - us-west-2
+      - eu-west-1
+      - ap-southeast-1
+      - ap-northeast-1
+  
+  Prefix:
+    Type: String
+    Description: The prefix applied to all resources stack creates.
+    Default: v1fs
+    MinLength: 1
+    MaxLength: 20
+  
+  EnableTag:
+    Type: String
+    Description: Enable AWS S3 Object Tagging of scanned objects
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+  
+  SDKTags:
+    Type: CommaDelimitedList
+    Description: Vision One applied Tags to help identify the objects in the Vision One.
+    Default: 'env:prod,project:new_app,cost-center:dev'
+  
+  ScannerLambdaKey:
+    Type: String
+    Description: S3 object key for the scanner Lambda function zip file
+    Default: 'functions/scanner/lambda.zip'
+  
+  TagLambdaKey:
+    Type: String
+    Description: S3 object key for the tag Lambda function zip file
+    Default: 'functions/tag/tag.zip'
+  
+  ScannerLayerKey:
+    Type: String
+    Description: S3 object key for the scanner Lambda layer zip file
+    Default: 'layers/v1fs-python312-arm64.zip'
+  
+  VPCCidr:
+    Type: String
+    Description: CIDR block for VPC (optional - leave empty to disable VPC)
+    Default: ''
+  
+  SubnetIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of subnet IDs for Lambda VPC configuration (optional)
+    Default: ''
+  
+  SecurityGroupIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of security group IDs for Lambda VPC configuration (optional)
+    Default: ''
+  
+  KMSKeyBucket:
+    Type: String
+    Description: The KMS Master key ARN for the scanner to access objects in a bucket using KMS encryption (optional)
+    Default: ''
+
+Conditions:
+  EnableVPCCondition: !Not [!Equals [!Ref VPCCidr, '']]
+  EnableKMSCondition: !Not [!Equals [!Ref KMSKeyBucket, '']]
+  EnableTagCondition: !Equals [!Ref EnableTag, 'true']
+
+Resources:
+  # Secrets Manager for API Key
+  ApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${Prefix}-apikey-${AWS::StackName}'
+      Description: Vision One API Key for V1FS Scanner
+      SecretString: !Ref V1FSApiKey
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-apikey-${AWS::StackName}'
+
+  # SNS Topic
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${Prefix}-topic-${AWS::StackName}'
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-topic-${AWS::StackName}'
+
+  # SQS Queue
+  ScannerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${Prefix}-queue-${AWS::StackName}'
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 3600
+      VisibilityTimeout: 720
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ScannerDLQ.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-queue-${AWS::StackName}'
+
+  ScannerDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${Prefix}-dlq-${AWS::StackName}'
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 3600
+      VisibilityTimeout: 720
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-dlq-${AWS::StackName}'
+
+  # SQS Queue Policy
+  ScannerQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ScannerQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: sqs_policy
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt ScannerQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt EventBridgeRule.Arn
+
+  # EventBridge Rule
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${Prefix}-eventbridgerule-${AWS::StackName}'
+      Description: Event rule for file uploads
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - Object Created
+      Targets:
+        - Arn: !GetAtt ScannerQueue.Arn
+          Id: sqs_target
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-eventbridge-rule-${AWS::StackName}'
+
+  # Lambda Layer
+  ScannerLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub '${Prefix}-layer-${AWS::StackName}'
+      Description: V1FS Python SDK Layer
+      Content:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref ScannerLayerKey
+      CompatibleArchitectures:
+        - arm64
+      CompatibleRuntimes:
+        - python3.12
+
+  # Scanner Lambda Function
+  ScannerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${Prefix}-scannerlambda-${AWS::StackName}'
+      Description: Function to scan the bucket using the V1FS
+      Runtime: python3.12
+      Handler: scanner_lambda.lambda_handler
+      Role: !GetAtt ScannerRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref ScannerLambdaKey
+      Timeout: 300
+      MemorySize: 512
+      Architectures:
+        - arm64
+      Layers:
+        - !Ref ScannerLayer
+      EphemeralStorage:
+        Size: 512
+      Environment:
+        Variables:
+          v1fs_region: !Ref V1FSRegion
+          topic_arn: !Ref SNSTopic
+          secret_name: !Ref ApiKeySecret
+          queue_url: !Ref ScannerQueue
+          sdk_tags: !Join ['~', !Ref SDKTags]
+      VpcConfig: !If
+        - EnableVPCCondition
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-scannerlambda-${AWS::StackName}'
+
+  # Scanner Lambda Role
+  ScannerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Prefix}-role-${AWS::StackName}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ScannerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:ListObjects
+                Resource:
+                  - 'arn:aws:s3:::*/*'
+                  - 'arn:aws:s3:::*'
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                  - sqs:ChangeMessageVisibility
+                Resource:
+                  - !GetAtt ScannerQueue.Arn
+                  - !GetAtt ScannerDLQ.Arn
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref SNSTopic
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref ApiKeySecret
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-scanner-role-${AWS::StackName}'
+
+  # KMS Policy (conditional)
+  ScannerKMSPolicy:
+    Type: AWS::IAM::Policy
+    Condition: EnableKMSCondition
+    Properties:
+      PolicyName: !Sub '${Prefix}-kmspolicy-${AWS::StackName}'
+      Description: Policy for scanner to access resources using KMS key
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: !Ref KMSKeyBucket
+      Roles:
+        - !Ref ScannerRole
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-kms-policy-${AWS::StackName}'
+
+  # VPC Policy Attachment (conditional)
+  ScannerVPCPolicyAttachment:
+    Type: AWS::IAM::RolePolicyAttachment
+    Condition: EnableVPCCondition
+    Properties:
+      RoleName: !Ref ScannerRole
+      PolicyArn: arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+  # Lambda Event Source Mapping
+  ScannerEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt ScannerQueue.Arn
+      FunctionName: !Ref ScannerLambda
+      Enabled: true
+
+  # DLQ Event Source Mapping
+  ScannerDLQEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt ScannerDLQ.Arn
+      FunctionName: !Ref ScannerLambda
+      Enabled: true
+
+  # Tag Lambda Function (conditional)
+  TagLambda:
+    Type: AWS::Lambda::Function
+    Condition: EnableTagCondition
+    Properties:
+      FunctionName: !Sub '${Prefix}-tag-lambda-${AWS::StackName}'
+      Description: Function to tag objects scanned by the scanner lambda
+      Runtime: python3.12
+      Handler: tag_lambda.lambda_handler
+      Role: !GetAtt TagRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref TagLambdaKey
+      Timeout: 120
+      MemorySize: 128
+      Architectures:
+        - arm64
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-tag-lambda-${AWS::StackName}'
+
+  # Tag Lambda Role (conditional)
+  TagRole:
+    Type: AWS::IAM::Role
+    Condition: EnableTagCondition
+    Properties:
+      RoleName: !Sub '${Prefix}-tag-role-${AWS::StackName}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: TagPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowTagging
+                Effect: Allow
+                Action:
+                  - s3:PutObjectTagging
+                  - s3:GetObjectTagging
+                Resource: 'arn:aws:s3:::*/*'
+              - Sid: AllowSNS
+                Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref SNSTopic
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-tag-role-${AWS::StackName}'
+
+  # SNS Topic Subscription for Tag Lambda (conditional)
+  TagSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: EnableTagCondition
+    Properties:
+      TopicArn: !Ref SNSTopic
+      Protocol: lambda
+      Endpoint: !GetAtt TagLambda.Arn
+
+  # Lambda Permission for SNS (conditional)
+  TagLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Condition: EnableTagCondition
+    Properties:
+      FunctionName: !Ref TagLambda
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SNSTopic
+
+Outputs:
+  LambdaArn:
+    Description: ARN of the Scanner Lambda function
+    Value: !GetAtt ScannerLambda.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaArn'
+
+  SQSArn:
+    Description: ARN of the Scanner SQS queue
+    Value: !GetAtt ScannerQueue.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-SQSArn'
+
+  SNSArn:
+    Description: ARN of the SNS topic
+    Value: !Ref SNSTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-SNSArn'
+
+  EventBridgeRuleArn:
+    Description: ARN of the EventBridge rule
+    Value: !GetAtt EventBridgeRule.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-EventBridgeRuleArn'
+
+  SecretArn:
+    Description: ARN of the Secrets Manager secret
+    Value: !Ref ApiKeySecret
+    Export:
+      Name: !Sub '${AWS::StackName}-SecretArn'
