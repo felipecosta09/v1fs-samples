@@ -24,6 +24,8 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
+**⚠️ Important:** Your S3 bucket must be in the same region where you're deploying the CloudFormation stack. Lambda layers cannot be created from S3 buckets in different regions.
+
 ## Manual Deployment
 
 If you prefer to handle Lambda code packaging manually:
@@ -37,8 +39,8 @@ aws s3 cp scanner.zip s3://your-bucket/functions/scanner/lambda.zip
 
 # Package tag Lambda  
 cd ../../tag/src
-zip tag.zip tag_lambda.py
-aws s3 cp tag.zip s3://your-bucket/functions/tag/tag.zip
+zip tag_lambda.zip tag_lambda.py
+aws s3 cp tag_lambda.zip s3://your-bucket/functions/tag/tag_lambda.zip
 
 # Upload Lambda layer
 aws s3 cp ../scanner/layer/v1fs-python312-arm64.zip s3://your-bucket/layers/v1fs-python312-arm64.zip
@@ -66,7 +68,7 @@ aws cloudformation deploy \
 - `Prefix` - Resource prefix (default: v1fs)
 - `EnableTag` - Enable object tagging (default: false)
 - `ScannerLambdaKey` - Scanner function S3 key (default: functions/scanner/lambda.zip)
-- `TagLambdaKey` - Tag function S3 key (default: functions/tag/tag.zip)
+- `TagLambdaKey` - Tag function S3 key (default: functions/tag/tag_lambda.zip)
 - `ScannerLayerKey` - Layer S3 key (default: layers/v1fs-python312-arm64.zip)
 
 ## S3 Structure Expected
@@ -74,17 +76,32 @@ aws cloudformation deploy \
 ```
 your-bucket/
 ├── functions/scanner/lambda.zip
-├── functions/tag/tag.zip
+├── functions/tag/tag_lambda.zip
 └── layers/v1fs-python312-arm64.zip
 ```
 
-## Features
+## Multi-Region Deployment
 
-- ✅ Automated Lambda code packaging and upload
-- ✅ Organized parameter groups in AWS Console
-- ✅ Complete feature parity with Terraform version
-- ✅ Support for VPC, KMS, and object tagging
-- ✅ ARM64 architecture for cost optimization
+### Layer Zip Region-Specific S3 Buckets
+Create S3 buckets in each region and upload Lambda code to each:
+
+AWS has a requirement for zip packages to be hosted in S3 in same region.
+
+```bash
+# Upload to us-east-1 bucket
+aws s3 cp lambda-code.zip s3://your-bucket-us-east-1/lambda.zip --region us-east-1
+
+# Upload to us-west-2 bucket  
+aws s3 cp lambda-code.zip s3://your-bucket-us-west-2/lambda.zip --region us-west-2
+
+# Deploy in each region
+aws cloudformation deploy --region us-east-1 --parameter-overrides LambdaCodeBucket=your-bucket-us-east-1
+aws cloudformation deploy --region us-west-2 --parameter-overrides LambdaCodeBucket=your-bucket-us-west-2
+```
+## CFT Updates Need for this
+- Bucket will need to be mapped to regions. So to point to right regional bucket location.
+
+
 
 ## Testing
 

@@ -108,7 +108,7 @@ Parameters:
   TagLambdaKey:
     Type: String
     Description: S3 object key for the tag Lambda function zip file
-    Default: 'functions/tag/tag.zip'
+    Default: 'functions/tag/tag_lambda.zip'
   
   ScannerLayerKey:
     Type: String

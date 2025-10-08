@@ -1,25 +1,36 @@
 import boto3
 import json
+from datetime import datetime
 
 s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
     
     # Parsing the SNS payload
-    event = event['Records'][0]['Sns']['Message']
-    event = event.replace("'", "\"")
-    data = json.loads(event)
-    scanning_result = data['scanning_result']['Findings'][0]['foundMalwares']
+    sns_message = event['Records'][0]['Sns']['Message']
+    sns_message_clean = sns_message.replace("'", "\"")
+    data = json.loads(sns_message_clean)
     
-    # Get bucket and object
-    object_key = data['scanning_result']['Findings'][0]['fileName']
-    bucket_name = data['file_url'].split('//')[-1].split('.')[0]
+    # Get the scanning result
+    scanning_result = data['scanning_result']
+    found_malwares = scanning_result['foundMalwares']
+    file_name = scanning_result['fileName']
+    scan_result_code = scanning_result['scanResult']
+    scan_timestamp = scanning_result['scanTimestamp']
     
-    # publish the tag
+    # Get bucket and object from file_url
+    file_url = data['file_url']
+    bucket_name = file_url.split('//')[-1].split('.')[0]
+    
+    print(f"Processing file: {file_name} in bucket: {bucket_name}")
+    print(f"Found malwares: {found_malwares}")
+    print(f"Scan result code: {scan_result_code}")
+    
+    # Function to publish tags
     def publish_tag(tag):
         response = s3.put_object_tagging(
             Bucket=bucket_name,
-            Key=object_key,
+            Key=file_name,
             Tagging={'TagSet': tag}
         )
         return response
@@ -30,37 +41,53 @@ def lambda_handler(event, context):
         except:
             existing_tags = []
         return existing_tags
-        
-    # Define new tags
-    malicious_tag = {'Key': 'scanResult', 'Value': 'malicious'}
-    clean_tag = {'Key': 'scanResult', 'Value': 'clean'}
     
-    # Get the existing tags
-    current_tags = get_existing_tags(bucket_name, object_key)
+    # Convert scan timestamp to readable format
+    scan_datetime = datetime.fromisoformat(scan_timestamp.replace('Z', '+00:00'))
+    scan_date_formatted = scan_datetime.strftime('%Y/%m/%d %H:%M:%S')
     
-    # Set the tag Key
-    tag_key = 'scanResult'
-
-    # remove the key-value pair with key 'scanResult' if exists
-    def remove_key(data, key):
-        return [d for d in data if d['Key'] != key]
+    # Determine scan result message based on scan result code and found malwares
+    if scan_result_code == 0 and found_malwares == []:
+        scan_result_message = "no issues found"
+        scan_detail_message = "-"
+    elif scan_result_code == 1 or found_malwares != []:
+        scan_result_message = "malicious"
+        scan_detail_message = f"Found {len(found_malwares)} malware(s): " + ", ".join([malware.get('malwareName', 'unknown') for malware in found_malwares])
+    else:
+        # Handle edge cases
+        scan_result_message = "unknown"
+        scan_detail_message = f"Scan code: {scan_result_code}, Malwares: {len(found_malwares)}"
     
-    # Remove the 'scanResult' if exists
-    current_tags = remove_key(current_tags, tag_key)
+    # Define new tags in your preferred format
+    new_tags = [
+        {'Key': 'fss-scan-detail-code', 'Value': str(scan_result_code)},
+        {'Key': 'fss-scan-date', 'Value': scan_date_formatted},
+        {'Key': 'fss-scan-result', 'Value': scan_result_message},
+        {'Key': 'fss-scan-detail-message', 'Value': scan_detail_message},
+        {'Key': 'fss-scanned', 'Value': 'true'}
+    ]
     
-    # Count how many tags the object has
-    count_tags = len(current_tags)
+    # Get existing tags
+    current_tags = get_existing_tags(bucket_name, file_name)
     
-    if scanning_result == [] and count_tags < 10:
-        print("No malwares found, apply a clean tag")
-        new_clean_tag = current_tags
-        new_clean_tag.append(clean_tag)
-        publish_tag(new_clean_tag)
-        
-    elif scanning_result != [] and count_tags < 10:
-        print("Found malwares! apply a malicious tag")
-        new_malicious_tag = current_tags
-        new_malicious_tag.append(malicious_tag)
-        publish_tag(new_malicious_tag)
-    elif count_tags >= 10:
-        print(f"The object has {count_tags} tags, and the limit is 10. Cannot apply more tags")
+    # Remove any existing fss- tags to avoid duplicates
+    def remove_fss_tags(tags):
+        return [tag for tag in tags if not tag['Key'].startswith('fss-')]
+    
+    # Clean existing tags and add new ones
+    cleaned_tags = remove_fss_tags(current_tags)
+    final_tags = cleaned_tags + new_tags
+    
+    # Check if we're within the 10 tag limit
+    if len(final_tags) <= 10:
+        publish_tag(final_tags)
+        print(f"Applied tags to {file_name}:")
+        for tag in new_tags:
+            print(f"  {tag['Key']}: {tag['Value']}")
+    else:
+        print(f"Cannot apply tags - would exceed 10 tag limit. Current tags: {len(cleaned_tags)}, New tags: {len(new_tags)}")
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps(f'Tagging completed for {file_name}')
+    }
