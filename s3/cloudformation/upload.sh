@@ -95,7 +95,7 @@ package_lambda_functions() {
     print_status "Packaging tag Lambda function..."
     cp lambda/tag/src/tag_lambda.py temp/tag/
     cd temp/tag
-    zip -r tag.zip . > /dev/null
+    zip -r tag_lambda.zip . > /dev/null
     cd ../..
     
     print_status "Lambda functions packaged successfully"
@@ -119,7 +119,7 @@ upload_to_s3() {
     
     # Upload tag Lambda
     print_status "Uploading tag Lambda function..."
-    aws s3 cp temp/tag/tag.zip "s3://$bucket_name/functions/tag/tag.zip"
+    aws s3 cp temp/tag/tag_lambda.zip "s3://$bucket_name/functions/tag/tag_lambda.zip"
     
     # Upload Lambda layer
     print_status "Uploading Lambda layer..."
@@ -163,7 +163,7 @@ main() {
     print_status "Upload completed successfully!"
     print_warning "Files uploaded to S3:"
     print_warning "  - s3://$bucket_name/functions/scanner/lambda.zip"
-    print_warning "  - s3://$bucket_name/functions/tag/tag.zip"
+    print_warning "  - s3://$bucket_name/functions/tag/tag_lambda.zip"
     print_warning "  - s3://$bucket_name/layers/v1fs-python312-arm64.zip"
     echo ""
     print_warning "You can now deploy the CloudFormation stack using:"
