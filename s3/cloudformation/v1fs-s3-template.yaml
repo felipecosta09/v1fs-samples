@@ -29,6 +29,10 @@ Metadata:
           - VPCCidr
           - SubnetIds
           - SecurityGroupIds
+      - Label:
+          default: IAM Permissions (Optional)
+        Parameters:
+          - PermissionsBoundaryArn
     ParameterLabels:
       V1FSApiKey:
         default: Vision One API Key
@@ -56,6 +60,8 @@ Metadata:
         default: Security Group IDs
       KMSKeyBucket:
         default: KMS Key ARN
+      PermissionsBoundaryArn:
+        default: IAM Permissions Boundary ARN
 
 Parameters:
   V1FSApiKey:
@@ -71,14 +77,16 @@ Parameters:
 
   V1FSRegion:
     Type: String
-    Description: The region of the Vision One console
+    Description: The Vision One Region. 
     Default: us-east-1
     AllowedValues:
       - us-east-1
-      - us-west-2
-      - eu-west-1
-      - ap-southeast-1
+      - eu-central-1
       - ap-northeast-1
+      - ap-southeast-1
+      - ap-southeast-2
+      - ap-south-1
+      - me-central-1
   
   Prefix:
     Type: String
@@ -90,7 +98,7 @@ Parameters:
   EnableTag:
     Type: String
     Description: Enable AWS S3 Object Tagging of scanned objects
-    Default: 'false'
+    Default: 'true'
     AllowedValues:
       - 'true'
       - 'false'
@@ -108,7 +116,7 @@ Parameters:
   TagLambdaKey:
     Type: String
     Description: S3 object key for the tag Lambda function zip file
-    Default: 'functions/tag/tag.zip'
+    Default: 'functions/tag/tag_lambda.zip'
   
   ScannerLayerKey:
     Type: String
@@ -134,11 +142,17 @@ Parameters:
     Type: String
     Description: The KMS Master key ARN for the scanner to access objects in a bucket using KMS encryption (optional)
     Default: ''
+  
+  PermissionsBoundaryArn:
+    Type: String
+    Description: ARN of the IAM permissions boundary policy to attach to IAM roles (optional)
+    Default: ''
 
 Conditions:
   EnableVPCCondition: !Not [!Equals [!Ref VPCCidr, '']]
   EnableKMSCondition: !Not [!Equals [!Ref KMSKeyBucket, '']]
   EnableTagCondition: !Equals [!Ref EnableTag, 'true']
+  EnablePermissionsBoundaryCondition: !Not [!Equals [!Ref PermissionsBoundaryArn, '']]
 
 Resources:
   # Secrets Manager for API Key
@@ -320,6 +334,10 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref ApiKeySecret
+      PermissionsBoundary: !If
+        - EnablePermissionsBoundaryCondition
+        - !Ref PermissionsBoundaryArn
+        - !Ref AWS::NoValue
       Tags:
         - Key: Name
           Value: !Sub '${Prefix}-scanner-role-${AWS::StackName}'
@@ -421,6 +439,10 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: !Ref SNSTopic
+      PermissionsBoundary: !If
+        - EnablePermissionsBoundaryCondition
+        - !Ref PermissionsBoundaryArn
+        - !Ref AWS::NoValue
       Tags:
         - Key: Name
           Value: !Sub '${Prefix}-tag-role-${AWS::StackName}'
