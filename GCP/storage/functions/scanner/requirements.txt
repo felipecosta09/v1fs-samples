@@ -1,0 +1,6 @@
+functions-framework==3.*
+google-cloud-storage==2.*
+google-cloud-pubsub==2.*
+cloudevents==1.*
+grpcio>=1.60.0
+protobuf>=4.25.0

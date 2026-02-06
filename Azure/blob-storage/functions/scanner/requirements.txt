@@ -1,0 +1,5 @@
+azure-functions
+azure-storage-blob
+azure-storage-queue
+grpcio>=1.60.0
+protobuf>=4.25.0

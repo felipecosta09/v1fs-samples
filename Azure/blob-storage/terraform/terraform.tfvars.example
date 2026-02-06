@@ -1,0 +1,45 @@
+# Required Variables
+# ===================
+
+# Azure resource group (must exist)
+resource_group_name = "my-resource-group"
+
+# Vision One API Key - REQUIRED
+v1fs_apikey = "your-vision-one-api-key-here"
+
+# Storage accounts to monitor (must exist in the same resource group)
+storage_account_names = ["storageaccount1", "storageaccount2"]
+
+# Optional Variables
+# ===================
+
+# Azure region
+location = "eastus"
+
+# Vision One File Security Region
+# Allowed: us-east-1, eu-central-1, ap-northeast-1, ap-southeast-1, ap-southeast-2, ap-south-1
+v1fs_region = "us-east-1"
+
+# Resource name prefix
+prefix = "v1fs"
+
+# Containers to monitor (use ["*"] for all containers)
+container_names = ["*"]
+
+# Enable blob metadata tagging
+enable_tag = true
+
+# SDK tags for Vision One UI
+sdk_tags = ["env:prod", "project:azure", "cost-center:dev"]
+
+# Production Features
+# ====================
+
+# Quarantine container for malicious files (leave empty to disable)
+# quarantine_container = "quarantine"
+
+# Delete malicious files from source after quarantine
+# delete_malicious = true
+
+# Function App SKU (Y1 = Consumption, EP1/EP2/EP3 = Premium)
+# function_sku = "Y1"

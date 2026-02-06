@@ -1,0 +1,40 @@
+# Required Variables
+# ===================
+
+# GCP Project ID
+project_id = "your-gcp-project-id"
+
+# Vision One API Key - REQUIRED
+# Get this from your Trend Micro Vision One console
+v1fs_apikey = "your-vision-one-api-key-here"
+
+# GCS buckets to monitor for new object uploads (must exist and be in the same region)
+gcs_bucket_names = ["bucket-1", "bucket-2", "bucket-3"]
+
+# Optional Variables
+# ===================
+
+# GCP region (bucket and functions must be in same region for storage trigger)
+region = "us-central1"
+
+# Vision One File Security Region
+# Allowed values: us-east-1, eu-central-1, ap-northeast-1, ap-southeast-1, ap-southeast-2, ap-south-1, me-central-1
+v1fs_region = "us-east-1"
+
+# Resource name prefix
+prefix = "v1fs"
+
+# Enable GCS object metadata tagging with scan results
+enable_tag = true
+
+# SDK tags for Vision One UI (comma-style format)
+sdk_tags = ["env:prod", "project:new_app", "cost-center:dev"]
+
+# Production Features
+# ====================
+
+# Quarantine bucket for malicious files (optional - leave empty to disable)
+# quarantine_bucket = "my-quarantine-bucket"
+
+# Delete malicious files from source after quarantine (requires quarantine_bucket)
+# delete_malicious = true

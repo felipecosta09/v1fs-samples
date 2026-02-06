@@ -1,0 +1,15 @@
+# Uncomment and configure for remote state storage
+# This enables state locking and team collaboration
+
+# terraform {
+#   backend "gcs" {
+#     bucket = "your-terraform-state-bucket"
+#     prefix = "v1fs-scanner/state"
+#   }
+# }
+
+# To create the state bucket:
+# gcloud storage buckets create gs://your-terraform-state-bucket \
+#   --location=us-central1 \
+#   --uniform-bucket-level-access \
+#   --public-access-prevention
